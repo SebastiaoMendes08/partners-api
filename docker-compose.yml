@@ -17,5 +17,18 @@ services:
       retries: 10
       start_period: 20s
 
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: partners-cloudbeaver
+    ports:
+      - "8978:8978"
+    volumes:
+      - partners-cloudbeaver-data:/opt/cloudbeaver/workspace
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   partners-sqldata:
+  partners-cloudbeaver-data:
