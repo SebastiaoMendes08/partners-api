@@ -1,1 +1,147 @@
-@baseUrl = http://localhost:5089
+@baseUrl = http://localhost:5089/api/partners
+
+### Criar cliente (Name e NIF são normalizados)
+# @name createCustomer
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": " Ana Silva ",
+  "taxNumber": "001.234.567",
+  "type": "CUSTOMER",
+  "email": "ana.silva@example.com",
+  "creditLimit": 1500.50
+}
+
+### Mesmo NIF noutro formato -> 409
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Ana Silva Duplicada",
+  "taxNumber": "001 234 567",
+  "type": "SUPPLIER",
+  "creditLimit": 0
+}
+
+### Dados inválidos -> 400 com todos os erros
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "A",
+  "taxNumber": "12345678A",
+  "type": "OTHER",
+  "email": "invalido",
+  "creditLimit": 10.999
+}
+
+### Obter por Id
+GET {{baseUrl}}/{{createCustomer.response.body.$.id}}
+
+### Id inexistente -> 404
+GET {{baseUrl}}/00000000-0000-0000-0000-000000000000
+
+### Id malformado -> 400
+GET {{baseUrl}}/abc
+
+### Listagem por defeito (apenas ativos, página 1, 20 por página)
+GET {{baseUrl}}
+
+### Filtros combinados: nome ou NIF + tipo + inativos + paginação
+GET {{baseUrl}}?Search=ana&Type=CUSTOMER&IncludeInactive=true&Page=1&PageSize=10
+
+### Pesquisa por NIF com separadores
+GET {{baseUrl}}?Search=500.100.200
+
+### Type=SUPPLIER inclui SUPPLIER e BOTH
+GET {{baseUrl}}?Type=SUPPLIER
+
+### Página além dos resultados -> Items vazio com TotalCount correto
+GET {{baseUrl}}?Page=100&PageSize=5
+
+### Filtros inválidos -> 400
+GET {{baseUrl}}?Page=0&PageSize=101&Type=customer
+
+### Atualizar (todos os campos são obrigatórios; Email pode ser null)
+# @name updateCustomer
+PUT {{baseUrl}}/{{createCustomer.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "name": "Ana Maria Silva",
+  "taxNumber": "001-234-567",
+  "type": "BOTH",
+  "email": null,
+  "creditLimit": 2500,
+  "isActive": true,
+  "version": "{{createCustomer.response.body.$.version}}"
+}
+
+### Repetir com a versão antiga -> 409
+PUT {{baseUrl}}/{{createCustomer.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "name": "Ana Maria Silva",
+  "taxNumber": "001234567",
+  "type": "BOTH",
+  "email": null,
+  "creditLimit": 2500,
+  "isActive": true,
+  "version": "{{createCustomer.response.body.$.version}}"
+}
+
+### Desativar (usa a versão mais recente)
+PUT {{baseUrl}}/{{createCustomer.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "name": "Ana Maria Silva",
+  "taxNumber": "001234567",
+  "type": "BOTH",
+  "email": null,
+  "creditLimit": 2500,
+  "isActive": false,
+  "version": "{{updateCustomer.response.body.$.version}}"
+}
+
+### Criar fornecedor
+# @name createSupplier
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "Fornecedor Exemplo",
+  "taxNumber": "222-333-444",
+  "type": "SUPPLIER",
+  "creditLimit": 0
+}
+
+### Mudar para o NIF de outra entidade -> 409 (dados mantidos)
+PUT {{baseUrl}}/{{createSupplier.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "name": "Fornecedor Exemplo",
+  "taxNumber": "001.234.567",
+  "type": "SUPPLIER",
+  "email": null,
+  "creditLimit": 0,
+  "isActive": true,
+  "version": "{{createSupplier.response.body.$.version}}"
+}
+
+### Version malformada -> 400
+PUT {{baseUrl}}/{{createSupplier.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "name": "Fornecedor Exemplo",
+  "taxNumber": "222333444",
+  "type": "SUPPLIER",
+  "email": null,
+  "creditLimit": 0,
+  "isActive": true,
+  "version": "abc"
+}
