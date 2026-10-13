@@ -18,13 +18,26 @@ Uma entidade pode ser cliente (`CUSTOMER`), fornecedor (`SUPPLIER`) ou ambos (`B
 
 ```
 src/
-  Partners.Api              Controllers, contratos HTTP e tratamento de erros
-  Partners.Core             Entidade, regras de validação e serviço (sem dependências de EF ou ASP.NET)
-  Partners.Infrastructure   DbContext, configuração EF, migrações, dados de exemplo e repositório
+  Partners.Api                Controllers, conversão de Result em Problem Details, Swagger
+  Partners.Application        Serviço de aplicação, DTOs, validação de pedidos e mapeamentos
+  Partners.Core               Domínio: entidade, regras, interface do repositório, Result e Error
+  Partners.Infrastructure     DbContext, configuração EF, migrações, dados de exemplo e repositório
+  Partners.Infrastructure.IoC Registo de todas as dependências (único ponto de composição)
 tests/
-  Partners.UnitTests        Regras de normalização e validação
-  Partners.IntegrationTests Endpoints testados sobre SQL Server real
+  Partners.UnitTests          Regras de validação e serviço de aplicação (com repositório falso)
+  Partners.IntegrationTests   Endpoints testados sobre SQL Server real
+  Partners.ArchitectureTests  Regras de dependência entre camadas
 ```
+
+Dependências entre projetos:
+
+```
+Partners.Api ──► Partners.Application ──► Partners.Core
+     │                                        ▲
+     └──► Partners.Infrastructure.IoC ──► Partners.Infrastructure
+```
+
+O Core não depende de nenhum outro projeto nem de EF Core ou ASP.NET. A Api não referencia a Infrastructure: só conhece a Application e chama `AddPartners()` do projeto IoC. Estas regras são verificadas pelos testes em `Partners.ArchitectureTests`.
 
 ## Pré-requisitos
 
@@ -133,6 +146,10 @@ Todos os erros usam o formato Problem Details (`application/problem+json`), sem 
 | `409` | NIF já registado ou `version` desatualizada |
 
 ## Decisões de implementação
+
+**Camadas e composição.** O registo de dependências está todo em `Partners.Infrastructure.IoC` (`AddPartners()`), e o `Program.cs` só trata do pipeline HTTP. A camada de aplicação expõe `IPartnerService` e DTOs próprios, por isso a API nunca recebe nem devolve a entidade de domínio.
+
+**Result pattern.** Os erros esperados (validação, entidade inexistente, NIF duplicado e versão desatualizada) não são exceções. O serviço devolve `Result<T>`, com o valor ou um `Error` tipado (`Validation`, `NotFound` ou `Conflict`), e o controller converte o `Error` em Problem Details com o código HTTP correspondente. O repositório também devolve `Result` quando o SQL Server rejeita a gravação. As exceções ficam reservadas para falhas inesperadas, tratadas pelo `ApiExceptionHandler` com uma resposta `500` genérica.
 
 **NIF único.** O NIF é normalizado (sem espaços, pontos e hífenes) antes de ser guardado em `varchar(9)`, e existe um índice único em `TaxNumber`. A unicidade é garantida pela base de dados: quando dois pedidos tentam gravar o mesmo NIF ao mesmo tempo, o SQL Server rejeita o segundo (erros 2601/2627) e o repositório converte isso em `409`. Não há verificação prévia nem lock em memória. Como as entidades nunca são apagadas, o NIF continua reservado depois de desativar.
 
