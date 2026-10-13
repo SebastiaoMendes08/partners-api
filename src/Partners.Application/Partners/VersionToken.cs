@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Partners.Core.Partners;
+namespace Partners.Application.Partners;
 
 public static class VersionToken
 {

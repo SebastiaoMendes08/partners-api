@@ -1,4 +1,6 @@
-namespace Partners.Core.Errors;
+using Partners.Core.Errors;
+
+namespace Partners.Application.Common;
 
 public sealed class ValidationErrors
 {

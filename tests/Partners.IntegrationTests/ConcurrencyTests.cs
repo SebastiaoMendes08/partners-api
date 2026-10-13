@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using Partners.Application.Partners;
 using Partners.Core.Errors;
 using Partners.Core.Partners;
 using Partners.Infrastructure.Persistence;

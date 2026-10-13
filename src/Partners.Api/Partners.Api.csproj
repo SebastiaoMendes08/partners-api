@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Partners.Core\Partners.Core.csproj" />
+    <ProjectReference Include="..\Partners.Application\Partners.Application.csproj" />
     <ProjectReference Include="..\Partners.Infrastructure.IoC\Partners.Infrastructure.IoC.csproj" />
   </ItemGroup>
 

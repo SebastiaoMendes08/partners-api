@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Partners.Core.Common;
 using Partners.Core.Errors;
 using Partners.Core.Partners;
 
@@ -13,43 +14,44 @@ public sealed class PartnerRepository(PartnersDbContext dbContext) : IPartnerRep
     public Task<Partner?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         dbContext.Partners.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
 
-    public async Task<PagedResult<Partner>> ListAsync(PartnerFilter filter, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<Partner>> ListAsync(PartnerSearchCriteria criteria,
+        CancellationToken cancellationToken = default)
     {
         var query = dbContext.Partners.AsNoTracking();
 
-        if (!filter.IncludeInactive)
+        if (!criteria.IncludeInactive)
         {
             query = query.Where(p => p.IsActive);
         }
 
-        if (filter.Types is { } types)
+        if (criteria.Types is { } types)
         {
             query = query.Where(p => types.Contains(p.Type));
         }
 
-        if (filter.Search is { } search)
+        if (criteria.Search is { } search)
         {
-            query = filter.TaxNumberSearch is { } taxNumber
+            query = criteria.TaxNumberSearch is { } taxNumber
                 ? query.Where(p => p.Name.Contains(search) || p.TaxNumber.Contains(taxNumber))
                 : query.Where(p => p.Name.Contains(search));
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
 
-        var offset = (long)(filter.Page - 1) * filter.PageSize;
+        var offset = (long)(criteria.Page - 1) * criteria.PageSize;
         if (offset >= totalCount)
         {
-            return new PagedResult<Partner>([], totalCount, filter.Page, filter.PageSize);
+            return new PagedResult<Partner>([], totalCount, criteria.Page, criteria.PageSize);
         }
 
         var items = await query
             .OrderBy(p => p.Name)
             .ThenBy(p => p.Id)
             .Skip((int)offset)
-            .Take(filter.PageSize)
+            .Take(criteria.PageSize)
             .ToListAsync(cancellationToken);
 
-        return new PagedResult<Partner>(items, totalCount, filter.Page, filter.PageSize);
+        return new PagedResult<Partner>(items, totalCount, criteria.Page, criteria.PageSize);
     }
 
     public async Task AddAsync(Partner partner, CancellationToken cancellationToken = default)

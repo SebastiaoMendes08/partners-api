@@ -1,8 +1,8 @@
 using Partners.Core.Partners;
 
-namespace Partners.Api.Contracts;
+namespace Partners.Application.Partners.Dtos;
 
-public sealed record PartnerResponse(
+public sealed record PartnerDto(
     Guid Id,
     string Name,
     string TaxNumber,
@@ -14,7 +14,7 @@ public sealed record PartnerResponse(
     DateTime UpdatedAt,
     string Version)
 {
-    public static PartnerResponse From(Partner partner) => new(
+    internal static PartnerDto From(Partner partner) => new(
         partner.Id,
         partner.Name,
         partner.TaxNumber,

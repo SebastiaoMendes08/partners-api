@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Partners.Application.Partners;
 using Partners.Core.Partners;
 using Partners.Infrastructure.Persistence;
 
@@ -16,7 +17,7 @@ public static class DependencyInjection
     {
         services.AddSingleton(TimeProvider.System);
 
-        services.AddScoped<PartnerService>();
+        services.AddScoped<IPartnerService, PartnerService>();
 
         services.AddDbContext<PartnersDbContext>((serviceProvider, options) =>
         {

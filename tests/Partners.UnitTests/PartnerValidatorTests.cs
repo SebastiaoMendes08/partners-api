@@ -1,3 +1,6 @@
+using Partners.Application.Common;
+using Partners.Application.Partners;
+using Partners.Application.Partners.Dtos;
 using Partners.Core.Errors;
 using Partners.Core.Partners;
 
@@ -5,12 +8,12 @@ namespace Partners.UnitTests;
 
 public class PartnerValidatorTests
 {
-    private static readonly PartnerInput ValidInput = new("Ana Silva", "001234567", "CUSTOMER", null, 100m);
+    private static readonly CreatePartnerDto ValidInput = new("Ana Silva", "001234567", "CUSTOMER", null, 100m);
 
     [Fact]
     public void Valid_input_is_normalized()
     {
-        var input = new PartnerInput(" Ana Silva ", "001.234.567", "BOTH", "  ana@example.com ", 1500.5m);
+        var input = new CreatePartnerDto(" Ana Silva ", "001.234.567", "BOTH", "  ana@example.com ", 1500.5m);
 
         var data = Validate(input, out var errors);
 
@@ -131,7 +134,7 @@ public class PartnerValidatorTests
     [Fact]
     public void All_errors_are_reported_together()
     {
-        var input = new PartnerInput("", "abc", "OTHER", "invalid", 10.999m);
+        var input = new CreatePartnerDto("", "abc", "OTHER", "invalid", 10.999m);
 
         Validate(input, out var errors);
 
@@ -139,13 +142,13 @@ public class PartnerValidatorTests
         Assert.Equal(["Name", "TaxNumber", "Type", "Email", "CreditLimit"], exception.Errors.Keys);
     }
 
-    private static PartnerData? Validate(PartnerInput input, out ValidationErrors errors)
+    private static PartnerData? Validate(CreatePartnerDto input, out ValidationErrors errors)
     {
         errors = new ValidationErrors();
         return PartnerValidator.Validate(input, errors);
     }
 
-    private static void AssertSingleError(PartnerInput input, string field)
+    private static void AssertSingleError(CreatePartnerDto input, string field)
     {
         var data = Validate(input, out var errors);
 

@@ -1,4 +1,4 @@
-using Partners.Core.Partners;
+using Partners.Application.Partners;
 
 namespace Partners.UnitTests;
 

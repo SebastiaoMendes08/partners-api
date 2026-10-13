@@ -1,16 +1,17 @@
+using Partners.Application.Partners.Dtos;
 using Partners.Core.Errors;
 using Partners.Core.Partners;
 
 namespace Partners.UnitTests;
 
-public class PartnerFilterTests
+public class ListPartnersQueryTests
 {
-    private static readonly PartnerListInput Empty = new(null, null, null, null, null);
+    private static readonly ListPartnersQuery Empty = new();
 
     [Fact]
     public void Defaults_are_applied()
     {
-        var filter = PartnerFilter.Create(Empty);
+        var filter = Empty.ToCriteria();
 
         Assert.Null(filter.Search);
         Assert.Null(filter.TaxNumberSearch);
@@ -26,7 +27,7 @@ public class PartnerFilterTests
     [InlineData("BOTH", new[] { PartnerType.Both })]
     public void Type_filter_includes_partners_that_are_both(string type, PartnerType[] expected)
     {
-        var filter = PartnerFilter.Create(Empty with { Type = type });
+        var filter = (Empty with { Type = type }).ToCriteria();
 
         Assert.Equal(expected, filter.Types);
     }
@@ -42,7 +43,7 @@ public class PartnerFilterTests
     public void Tax_number_search_is_only_used_for_digits(string search, string? expectedSearch,
         string? expectedTaxNumber)
     {
-        var filter = PartnerFilter.Create(Empty with { Search = search });
+        var filter = (Empty with { Search = search }).ToCriteria();
 
         Assert.Equal(expectedSearch, filter.Search);
         Assert.Equal(expectedTaxNumber, filter.TaxNumberSearch);
@@ -56,7 +57,7 @@ public class PartnerFilterTests
     public void Invalid_paging_is_rejected(int? page, int? pageSize, string field)
     {
         var exception = Assert.Throws<ValidationException>(() =>
-            PartnerFilter.Create(Empty with { Page = page, PageSize = pageSize }));
+            (Empty with { Page = page, PageSize = pageSize }).ToCriteria());
 
         Assert.Equal([field], exception.Errors.Keys);
     }
@@ -67,7 +68,7 @@ public class PartnerFilterTests
     [InlineData("1")]
     public void Invalid_type_is_rejected(string type)
     {
-        var exception = Assert.Throws<ValidationException>(() => PartnerFilter.Create(Empty with { Type = type }));
+        var exception = Assert.Throws<ValidationException>(() => (Empty with { Type = type }).ToCriteria());
 
         Assert.Equal(["Type"], exception.Errors.Keys);
     }

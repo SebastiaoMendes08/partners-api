@@ -1,10 +1,12 @@
-using Partners.Core.Errors;
+using Partners.Application.Common;
+using Partners.Application.Partners.Dtos;
+using Partners.Core.Partners;
 
-namespace Partners.Core.Partners;
+namespace Partners.Application.Partners;
 
 public static class PartnerValidator
 {
-    public static PartnerData? Validate(PartnerInput input, ValidationErrors errors)
+    public static PartnerData? Validate(IPartnerDetails input, ValidationErrors errors)
     {
         var errorCount = errors.Count;
 
