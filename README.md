@@ -64,7 +64,7 @@ export ConnectionStrings__Partners="Server=localhost,1433;Database=PartnersDb;Us
 dotnet run --project src/Partners.Api --launch-profile http
 ```
 
-A API fica disponível em `http://localhost:5089`. Em ambiente de desenvolvimento, o documento OpenAPI está em `http://localhost:5089/openapi/v1.json`.
+A API fica disponível em `http://localhost:5089`. Em ambiente de desenvolvimento, o Swagger UI está em `http://localhost:5089/swagger` (o URL também aparece no terminal ao arrancar).
 
 O ficheiro `src/Partners.Api/Partners.Api.http` tem exemplos de todos os endpoints, incluindo os casos de erro. Pode ser executado no Visual Studio, no Rider ou no VS Code (extensão REST Client).
 

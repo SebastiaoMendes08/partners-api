@@ -28,6 +28,14 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    app.Lifetime.ApplicationStarted.Register(() =>
+    {
+        foreach (var url in app.Urls)
+        {
+            app.Logger.LogInformation("Swagger UI: {SwaggerUrl}", $"{url.TrimEnd('/')}/swagger");
+        }
+    });
 }
 
 app.MapControllers();
