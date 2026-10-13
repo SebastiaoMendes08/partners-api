@@ -1,6 +1,5 @@
 using Partners.Api.Errors;
-using Partners.Core.Partners;
-using Partners.Infrastructure;
+using Partners.Infrastructure.IoC;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,9 +14,7 @@ builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddScoped<PartnerService>();
-builder.Services.AddInfrastructure();
+builder.Services.AddPartners();
 
 var app = builder.Build();
 

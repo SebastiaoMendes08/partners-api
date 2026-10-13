@@ -6,14 +6,18 @@ using Microsoft.Extensions.Logging;
 using Partners.Core.Partners;
 using Partners.Infrastructure.Persistence;
 
-namespace Partners.Infrastructure;
+namespace Partners.Infrastructure.IoC;
 
 public static class DependencyInjection
 {
     public const string ConnectionStringName = "Partners";
 
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
+    public static IServiceCollection AddPartners(this IServiceCollection services)
     {
+        services.AddSingleton(TimeProvider.System);
+
+        services.AddScoped<PartnerService>();
+
         services.AddDbContext<PartnersDbContext>((serviceProvider, options) =>
         {
             var connectionString = serviceProvider.GetRequiredService<IConfiguration>()

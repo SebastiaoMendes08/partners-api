@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
-using Partners.Infrastructure;
+using Partners.Infrastructure.IoC;
 
 namespace Partners.IntegrationTests.Infrastructure;
 
