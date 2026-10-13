@@ -1,7 +1,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Partners.Core.Common;
-using Partners.Core.Errors;
 using Partners.Core.Partners;
 
 namespace Partners.Infrastructure.Persistence;
@@ -54,34 +53,36 @@ public sealed class PartnerRepository(PartnersDbContext dbContext) : IPartnerRep
         return new PagedResult<Partner>(items, totalCount, criteria.Page, criteria.PageSize);
     }
 
-    public async Task AddAsync(Partner partner, CancellationToken cancellationToken = default)
+    public Task<Result> AddAsync(Partner partner, CancellationToken cancellationToken = default)
     {
         dbContext.Partners.Add(partner);
-        await SaveChangesAsync(partner, cancellationToken);
+        return SaveChangesAsync(partner, cancellationToken);
     }
 
-    public async Task UpdateAsync(Partner partner, byte[] expectedVersion, CancellationToken cancellationToken = default)
+    public Task<Result> UpdateAsync(Partner partner, byte[] expectedVersion,
+        CancellationToken cancellationToken = default)
     {
         dbContext.Entry(partner).Property(p => p.Version).OriginalValue = expectedVersion;
-        await SaveChangesAsync(partner, cancellationToken);
+        return SaveChangesAsync(partner, cancellationToken);
     }
 
-    private async Task SaveChangesAsync(Partner partner, CancellationToken cancellationToken)
+    private async Task<Result> SaveChangesAsync(Partner partner, CancellationToken cancellationToken)
     {
         try
         {
             await dbContext.SaveChangesAsync(cancellationToken);
+            return Result.Success();
         }
-        catch (DbUpdateConcurrencyException ex)
+        catch (DbUpdateConcurrencyException)
         {
-            throw new ConcurrencyConflictException(partner.Id, ex);
+            return PartnerErrors.VersionConflict(partner.Id);
         }
         catch (DbUpdateException ex) when (ex.InnerException is SqlException
                                            {
                                                Number: UniqueIndexViolation or UniqueConstraintViolation
                                            })
         {
-            throw new DuplicateTaxNumberException(partner.TaxNumber, ex);
+            return PartnerErrors.DuplicateTaxNumber(partner.TaxNumber);
         }
     }
 }

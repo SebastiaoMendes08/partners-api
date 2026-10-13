@@ -1,4 +1,5 @@
 using Partners.Application.Common;
+using Partners.Core.Common;
 using Partners.Core.Partners;
 
 namespace Partners.Application.Partners.Dtos;
@@ -15,7 +16,7 @@ public sealed record ListPartnersQuery
     public int? Page { get; init; }
     public int? PageSize { get; init; }
 
-    public PartnerSearchCriteria ToCriteria()
+    public Result<PartnerSearchCriteria> ToCriteria()
     {
         var errors = new ValidationErrors();
 
@@ -44,7 +45,10 @@ public sealed record ListPartnersQuery
             errors.Add(nameof(PageSize), $"PageSize must be between 1 and {MaxPageSize}.");
         }
 
-        errors.ThrowIfAny();
+        if (errors.HasErrors)
+        {
+            return errors.ToError();
+        }
 
         return PartnerSearchCriteria.Create(Search, type, IncludeInactive ?? false, page, pageSize);
     }

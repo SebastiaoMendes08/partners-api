@@ -1,35 +1,57 @@
 using Partners.Application.Common;
 using Partners.Application.Partners.Dtos;
 using Partners.Core.Common;
-using Partners.Core.Errors;
 using Partners.Core.Partners;
 
 namespace Partners.Application.Partners;
 
 public sealed class PartnerService(IPartnerRepository repository, TimeProvider timeProvider) : IPartnerService
 {
-    public async Task<PartnerDto> CreateAsync(CreatePartnerDto dto, CancellationToken cancellationToken = default)
+    public async Task<Result<PartnerDto>> CreateAsync(CreatePartnerDto dto,
+        CancellationToken cancellationToken = default)
     {
         var errors = new ValidationErrors();
         var data = PartnerValidator.Validate(dto, errors);
-        errors.ThrowIfAny();
+        if (data is null)
+        {
+            return errors.ToError();
+        }
 
-        var partner = Partner.Create(data!, UtcNow());
-        await repository.AddAsync(partner, cancellationToken);
+        var partner = Partner.Create(data, UtcNow());
+        var saved = await repository.AddAsync(partner, cancellationToken);
+        if (saved.IsFailure)
+        {
+            return saved.Error;
+        }
+
         return PartnerDto.From(partner);
     }
 
-    public async Task<PartnerDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
-        PartnerDto.From(await FindAsync(id, cancellationToken));
+    public async Task<Result<PartnerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var partner = await repository.GetByIdAsync(id, cancellationToken);
+        if (partner is null)
+        {
+            return PartnerErrors.NotFound(id);
+        }
 
-    public async Task<PagedResult<PartnerDto>> ListAsync(ListPartnersQuery query,
+        return PartnerDto.From(partner);
+    }
+
+    public async Task<Result<PagedResult<PartnerDto>>> ListAsync(ListPartnersQuery query,
         CancellationToken cancellationToken = default)
     {
-        var page = await repository.ListAsync(query.ToCriteria(), cancellationToken);
+        var criteria = query.ToCriteria();
+        if (criteria.IsFailure)
+        {
+            return criteria.Error;
+        }
+
+        var page = await repository.ListAsync(criteria.Value, cancellationToken);
         return page.Map(PartnerDto.From);
     }
 
-    public async Task<PartnerDto> UpdateAsync(Guid id, UpdatePartnerDto dto,
+    public async Task<Result<PartnerDto>> UpdateAsync(Guid id, UpdatePartnerDto dto,
         CancellationToken cancellationToken = default)
     {
         var errors = new ValidationErrors();
@@ -50,16 +72,26 @@ public sealed class PartnerService(IPartnerRepository repository, TimeProvider t
             errors.Add(nameof(dto.Version), "Version is not valid. Use the value returned by the API.");
         }
 
-        errors.ThrowIfAny();
+        if (data is null || dto.IsActive is not { } isActive || version is null)
+        {
+            return errors.ToError();
+        }
 
-        var partner = await FindAsync(id, cancellationToken);
-        partner.Update(data!, dto.IsActive!.Value, UtcNow());
-        await repository.UpdateAsync(partner, version!, cancellationToken);
+        var partner = await repository.GetByIdAsync(id, cancellationToken);
+        if (partner is null)
+        {
+            return PartnerErrors.NotFound(id);
+        }
+
+        partner.Update(data, isActive, UtcNow());
+        var saved = await repository.UpdateAsync(partner, version, cancellationToken);
+        if (saved.IsFailure)
+        {
+            return saved.Error;
+        }
+
         return PartnerDto.From(partner);
     }
-
-    private async Task<Partner> FindAsync(Guid id, CancellationToken cancellationToken) =>
-        await repository.GetByIdAsync(id, cancellationToken) ?? throw new PartnerNotFoundException(id);
 
     private DateTime UtcNow() => timeProvider.GetUtcNow().UtcDateTime;
 }

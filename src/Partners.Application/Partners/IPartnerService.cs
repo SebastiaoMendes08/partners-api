@@ -5,11 +5,12 @@ namespace Partners.Application.Partners;
 
 public interface IPartnerService
 {
-    Task<PartnerDto> CreateAsync(CreatePartnerDto dto, CancellationToken cancellationToken = default);
+    Task<Result<PartnerDto>> CreateAsync(CreatePartnerDto dto, CancellationToken cancellationToken = default);
 
-    Task<PartnerDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result<PartnerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
-    Task<PagedResult<PartnerDto>> ListAsync(ListPartnersQuery query, CancellationToken cancellationToken = default);
+    Task<Result<PagedResult<PartnerDto>>> ListAsync(ListPartnersQuery query,
+        CancellationToken cancellationToken = default);
 
-    Task<PartnerDto> UpdateAsync(Guid id, UpdatePartnerDto dto, CancellationToken cancellationToken = default);
+    Task<Result<PartnerDto>> UpdateAsync(Guid id, UpdatePartnerDto dto, CancellationToken cancellationToken = default);
 }

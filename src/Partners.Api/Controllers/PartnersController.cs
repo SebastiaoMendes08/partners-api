@@ -5,9 +5,8 @@ using Partners.Core.Common;
 
 namespace Partners.Api.Controllers;
 
-[ApiController]
 [Route("api/partners")]
-public sealed class PartnersController(IPartnerService partnerService) : ControllerBase
+public sealed class PartnersController(IPartnerService partnerService) : ApiControllerBase
 {
     [HttpPost]
     [ProducesResponseType<PartnerDto>(StatusCodes.Status201Created)]
@@ -15,23 +14,31 @@ public sealed class PartnersController(IPartnerService partnerService) : Control
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<PartnerDto>> Create(CreatePartnerDto request, CancellationToken cancellationToken)
     {
-        var partner = await partnerService.CreateAsync(request, cancellationToken);
-        return CreatedAtAction(nameof(GetById), new { id = partner.Id }, partner);
+        var result = await partnerService.CreateAsync(request, cancellationToken);
+        return result.IsSuccess
+            ? CreatedAtAction(nameof(GetById), new { id = result.Value.Id }, result.Value)
+            : Problem(result.Error);
     }
 
     [HttpGet("{id}")]
     [ProducesResponseType<PartnerDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PartnerDto>> GetById(Guid id, CancellationToken cancellationToken) =>
-        await partnerService.GetByIdAsync(id, cancellationToken);
+    public async Task<ActionResult<PartnerDto>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await partnerService.GetByIdAsync(id, cancellationToken);
+        return result.IsSuccess ? Ok(result.Value) : Problem(result.Error);
+    }
 
     [HttpGet]
     [ProducesResponseType<PagedResult<PartnerDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PagedResult<PartnerDto>>> List([FromQuery] ListPartnersQuery query,
-        CancellationToken cancellationToken) =>
-        await partnerService.ListAsync(query, cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        var result = await partnerService.ListAsync(query, cancellationToken);
+        return result.IsSuccess ? Ok(result.Value) : Problem(result.Error);
+    }
 
     [HttpPut("{id}")]
     [ProducesResponseType<PartnerDto>(StatusCodes.Status200OK)]
@@ -39,6 +46,9 @@ public sealed class PartnersController(IPartnerService partnerService) : Control
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<PartnerDto>> Update(Guid id, UpdatePartnerDto request,
-        CancellationToken cancellationToken) =>
-        await partnerService.UpdateAsync(id, request, cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        var result = await partnerService.UpdateAsync(id, request, cancellationToken);
+        return result.IsSuccess ? Ok(result.Value) : Problem(result.Error);
+    }
 }

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Partners.Application.Partners;
-using Partners.Core.Errors;
+using Partners.Core.Common;
 using Partners.Core.Partners;
 using Partners.Infrastructure.Persistence;
 using Partners.IntegrationTests.Infrastructure;
@@ -52,8 +52,8 @@ public class ConcurrencyTests(ApiFixture fixture) : ApiTestBase(fixture)
             () => new PartnerRepository(first).AddAsync(Partner.Create(data, DateTime.UtcNow)),
             () => new PartnerRepository(second).AddAsync(Partner.Create(data, DateTime.UtcNow)));
 
-        Assert.Single(results, r => r is null);
-        Assert.Single(results, r => r is DuplicateTaxNumberException);
+        Assert.Single(results, r => r.IsSuccess);
+        Assert.Single(results, r => r.Error == PartnerErrors.DuplicateTaxNumber("001234567"));
         Assert.Equal(1, await CountStoredAsync());
     }
 
@@ -79,26 +79,18 @@ public class ConcurrencyTests(ApiFixture fixture) : ApiTestBase(fixture)
             () => firstRepository.UpdateAsync(firstCopy, version),
             () => secondRepository.UpdateAsync(secondCopy, version));
 
-        Assert.Single(results, r => r is null);
-        Assert.Single(results, r => r is ConcurrencyConflictException);
+        Assert.Single(results, r => r.IsSuccess);
+        Assert.Single(results, r => r.Error == PartnerErrors.VersionConflict(created.Id));
     }
 
-    private static async Task<Exception?[]> RunTogetherAsync(params Func<Task>[] actions)
+    private static async Task<Result[]> RunTogetherAsync(params Func<Task<Result>>[] actions)
     {
         using var start = new Barrier(actions.Length);
 
-        var tasks = actions.Select(action => Task.Run(async () =>
+        var tasks = actions.Select(action => Task.Run(() =>
         {
             start.SignalAndWait();
-            try
-            {
-                await action();
-                return null;
-            }
-            catch (Exception ex)
-            {
-                return ex;
-            }
+            return action();
         }));
 
         return await Task.WhenAll(tasks);

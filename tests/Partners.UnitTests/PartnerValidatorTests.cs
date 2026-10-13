@@ -1,7 +1,6 @@
 using Partners.Application.Common;
 using Partners.Application.Partners;
 using Partners.Application.Partners.Dtos;
-using Partners.Core.Errors;
 using Partners.Core.Partners;
 
 namespace Partners.UnitTests;
@@ -138,8 +137,8 @@ public class PartnerValidatorTests
 
         Validate(input, out var errors);
 
-        var exception = Assert.Throws<ValidationException>(errors.ThrowIfAny);
-        Assert.Equal(["Name", "TaxNumber", "Type", "Email", "CreditLimit"], exception.Errors.Keys);
+        var error = errors.ToError();
+        Assert.Equal(["Name", "TaxNumber", "Type", "Email", "CreditLimit"], error.ValidationErrors!.Keys);
     }
 
     private static PartnerData? Validate(CreatePartnerDto input, out ValidationErrors errors)
@@ -153,7 +152,6 @@ public class PartnerValidatorTests
         var data = Validate(input, out var errors);
 
         Assert.Null(data);
-        var exception = Assert.Throws<ValidationException>(errors.ThrowIfAny);
-        Assert.Equal([field], exception.Errors.Keys);
+        Assert.Equal([field], errors.ToError().ValidationErrors!.Keys);
     }
 }

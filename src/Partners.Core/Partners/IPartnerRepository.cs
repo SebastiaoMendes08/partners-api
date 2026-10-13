@@ -8,7 +8,7 @@ public interface IPartnerRepository
 
     Task<PagedResult<Partner>> ListAsync(PartnerSearchCriteria criteria, CancellationToken cancellationToken = default);
 
-    Task AddAsync(Partner partner, CancellationToken cancellationToken = default);
+    Task<Result> AddAsync(Partner partner, CancellationToken cancellationToken = default);
 
-    Task UpdateAsync(Partner partner, byte[] expectedVersion, CancellationToken cancellationToken = default);
+    Task<Result> UpdateAsync(Partner partner, byte[] expectedVersion, CancellationToken cancellationToken = default);
 }
